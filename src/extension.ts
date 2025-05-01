@@ -152,16 +152,22 @@ async function registerMultiModelChatParticipant(context: vscode.ExtensionContex
       
       // Reset the webview model list before setting new models
       chatWebView.resetModels();
+
+      // Use all available models for comparison (up to 6)
+      const modelsToUse = selectedModels.slice(0, 6);
       
+      // Initialize each model's response state
+      modelsToUse.forEach((model, index) => {
+        const modelConfig = AI_MODELS.find(m => m.id === model.id);
+        const modelName = modelConfig ? modelConfig.displayName : `Model ${index + 1}: ${model.id.split('/').pop() || model.id}`;
+        chatWebView.startModelResponse(modelName);
+      });
+
       // Set the user's message in the webview
       chatWebView.setUserMessage(request.prompt);
       
       // Tell VS Code chat what we're doing
       response.markdown(`Processing your request using ${selectedModels.length} AI model(s). Please check the results in the panel to the right.`);
-      
-      // Use all available models for comparison (up to 3)
-      const modelsToUse = selectedModels.slice(0, 6);
-      //console.log(`Using ${modelsToUse.length} models for comparison:`, modelsToUse.map(m => m.id));
       
       // Send the request to each available model in parallel
       const modelRequests = modelsToUse.map(async (model, index) => {

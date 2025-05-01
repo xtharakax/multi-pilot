@@ -12,6 +12,8 @@ export class ChatWebView {
   private modelNames: string[] = []; // Track available models
   private hiddenModels: Set<string> = new Set(); // Track which models are hidden
   private messageListenerRegistered: boolean = false;
+  private updateTimer: NodeJS.Timeout | undefined;
+  private isInitialLoad: boolean = true;
   
   private constructor() {}
   
@@ -49,14 +51,19 @@ export class ChatWebView {
       }
     );
     
+    // Set initial loading state
+    this.isInitialLoad = true;
+    this.panel.webview.html = this.getLoadingContent();
+
     // Reset message listener state when panel is disposed
     this.panel.onDidDispose(() => {
       this.panel = undefined;
       this.messageListenerRegistered = false;
+      if (this.updateTimer) {
+        clearTimeout(this.updateTimer);
+        this.updateTimer = undefined;
+      }
     });
-    
-    // Initial HTML content
-    this.panel.webview.html = this.getWebviewContent();
     
     // Set up message handling - only register once per panel instance
     this.setupMessageListener();
@@ -67,13 +74,16 @@ export class ChatWebView {
    */
   public setUserMessage(message: string) {
     this.lastUserMessage = message;
-    this.updateWebview();
+    if (!this.isInitialLoad) {
+      this.debouncedUpdateWebview();
+    }
   }
   
   /**
    * Update response for a specific model
    */
   public async updateModelResponse(modelName: string, response: string) {
+    this.isInitialLoad = false;
     // Add to model names array if not already present
     if (!this.modelNames.includes(modelName)) {
       this.modelNames.push(modelName);
@@ -85,8 +95,24 @@ export class ChatWebView {
     // Store the resolved string in the responses map
     this.responses.set(modelName, formattedResponse);
 
-    // Update the webview
-    this.updateWebview();
+    // Update the webview with debounce
+    this.debouncedUpdateWebview();
+  }
+  
+  /**
+   * Debounced update of the webview to prevent rapid successive updates
+   */
+  private debouncedUpdateWebview() {
+    if (this.updateTimer) {
+      clearTimeout(this.updateTimer);
+    }
+    
+    this.updateTimer = setTimeout(() => {
+      if (this.panel) {
+        console.log("Updating ChatWebView content");
+        this.panel.webview.html = this.getWebviewContent();
+      }
+    }, 100); // 100ms debounce delay
   }
   
   /**
@@ -105,9 +131,12 @@ export class ChatWebView {
    * Start showing typing indicator for a model
    */
   public startModelResponse(modelName: string) {
+    this.isInitialLoad = false;  // Set isInitialLoad to false when we start getting responses
+    
     // Add to model names array if not already present
     if (!this.modelNames.includes(modelName)) {
       this.modelNames.push(modelName);
+      console.log(`Added model ${modelName} to visibility controls. Current models:`, this.modelNames);
     }
 
     // Set a loading animation as the initial response
@@ -116,7 +145,9 @@ export class ChatWebView {
       <span></span>
       <span></span>
     </div>`);
-    this.updateWebview();
+    
+    // Use debounced update to prevent rapid successive updates
+    this.debouncedUpdateWebview();
   }
   
   /**
@@ -143,8 +174,9 @@ export class ChatWebView {
   /**
    * Update the webview content
    */
-  private updateWebview() {
+  private updateWebview() {    
     if (this.panel) {
+      console.log("Updating ChatWebView content");
       this.panel.webview.html = this.getWebviewContent();
     }
   }
@@ -187,6 +219,21 @@ export class ChatWebView {
    * Generate the HTML content for the webview
    */
   private getWebviewContent(): string {
+    // Create a prominent loading message when there's no user message
+    const userMessageHtml = this.lastUserMessage
+      ? `<div class="user-query">
+           <div class="user-query-label">Your Query:</div>
+           <div class="user-query-text">${this.escapeHtml(this.lastUserMessage)}</div>
+         </div>`
+      : `<div class="loading-container">
+           <div class="loading-message">
+             <h2>Loading, please wait...</h2>
+             <div class="loading-spinner">
+               <div></div><div></div><div></div><div></div>
+             </div>
+           </div>
+         </div>`;
+
     return `<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -405,6 +452,61 @@ export class ChatWebView {
         .hidden-model {
           display: none;
         }
+
+        /* Prominent loading styles */
+        .loading-container {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 40px 0;
+          width: 100%;
+          font-size: 16px;
+          text-align: center;
+          color: var(--vscode-foreground);
+        }
+        
+        .loading-message h2 {
+          margin-bottom: 20px;
+          font-size: 18px;
+        }
+        
+        .loading-spinner {
+          display: inline-block;
+          position: relative;
+          width: 50px;
+          height: 50px;
+          margin: 0 auto;
+        }
+        
+        .loading-spinner div {
+          box-sizing: border-box;
+          display: block;
+          position: absolute;
+          width: 40px;
+          height: 40px;
+          margin: 5px;
+          border: 5px solid var(--vscode-button-background);
+          border-radius: 50%;
+          animation: loading-spinner 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+          border-color: var(--vscode-button-background) transparent transparent transparent;
+        }
+        
+        .loading-spinner div:nth-child(1) {
+          animation-delay: -0.45s;
+        }
+        
+        .loading-spinner div:nth-child(2) {
+          animation-delay: -0.3s;
+        }
+        
+        .loading-spinner div:nth-child(3) {
+          animation-delay: -0.15s;
+        }
+        
+        @keyframes loading-spinner {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
       </style>
     </head>
     <body>
@@ -417,12 +519,12 @@ export class ChatWebView {
       </div>
       
       ${this.renderModelVisibilityControls()}
-      
-      ${this.renderUserQuery()}
+      ${userMessageHtml}
       
       <div class="split-container">
         ${this.renderModelColumns()}
       </div>
+      
       <script>
         (function() {
           const vscode = acquireVsCodeApi();
@@ -463,6 +565,39 @@ export class ChatWebView {
           });
         })();
       </script>
+    </body>
+    </html>`;
+  }
+  
+  /**
+   * Generate the initial loading content for the webview
+   */
+  private getLoadingContent(): string {
+    return `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Loading...</title>
+      <style>
+        body {
+          font-family: var(--vscode-font-family);
+          color: var(--vscode-editor-foreground);
+          background-color: var(--vscode-editor-background);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+          margin: 0;
+        }
+        .loading {
+          font-size: 16px;
+          text-align: center;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="loading">Loading, please wait...</div>
     </body>
     </html>`;
   }
