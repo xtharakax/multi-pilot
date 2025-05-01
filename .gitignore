@@ -1,0 +1,34 @@
+# Build output
+out
+dist
+node_modules
+
+# VS Code files
+.vscode-test/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Extension package
+*.vsix
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env.*
+
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
