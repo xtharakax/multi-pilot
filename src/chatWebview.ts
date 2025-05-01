@@ -10,6 +10,7 @@ export class ChatWebView {
   private lastUserMessage: string = '';
   private responses: Map<string, string> = new Map(); // model -> response
   private modelNames: string[] = []; // Track available models
+  private hiddenModels: Set<string> = new Set(); // Track which models are hidden
   private messageListenerRegistered: boolean = false;
   
   private constructor() {}
@@ -89,6 +90,18 @@ export class ChatWebView {
   }
   
   /**
+   * Toggle model visibility
+   */
+  public toggleModelVisibility(modelName: string, isVisible: boolean) {
+    if (isVisible) {
+      this.hiddenModels.delete(modelName);
+    } else {
+      this.hiddenModels.add(modelName);
+    }
+    this.updateWebview();
+  }
+  
+  /**
    * Start showing typing indicator for a model
    */
   public startModelResponse(modelName: string) {
@@ -159,6 +172,10 @@ export class ChatWebView {
           } catch (error) {
             console.error("Error executing model selection command:", error);
           }
+          break;
+        case "toggleModelVisibility":
+          console.log(`Toggling visibility for model: ${message.modelName}, visible: ${message.isVisible}`);
+          this.toggleModelVisibility(message.modelName, message.isVisible);
           break;
       }
     });
@@ -358,6 +375,36 @@ export class ChatWebView {
           color: var(--vscode-descriptionForeground);
           padding: 20px;
         }
+        
+        /* Model visibility controls */
+        .model-visibility-controls {
+          display: flex;
+          flex-wrap: wrap;
+          padding: 8px 15px;
+          background-color: var(--vscode-editor-background);
+          border-bottom: 1px solid var(--border-color);
+        }
+        
+        .model-checkbox-container {
+          display: flex;
+          align-items: center;
+          margin-right: 16px;
+          margin-bottom: 8px;
+        }
+        
+        .model-checkbox {
+          margin-right: 6px;
+        }
+        
+        .model-checkbox-label {
+          font-size: 13px;
+          cursor: pointer;
+          user-select: none;
+        }
+        
+        .hidden-model {
+          display: none;
+        }
       </style>
     </head>
     <body>
@@ -368,6 +415,8 @@ export class ChatWebView {
           <button id="modelSelectionButton">Select Models</button>
         </div>
       </div>
+      
+      ${this.renderModelVisibilityControls()}
       
       ${this.renderUserQuery()}
       
@@ -393,10 +442,66 @@ export class ChatWebView {
             console.log("Model selection button clicked");
             vscode.postMessage({ command: 'openModelSelection' });
           };
+          
+          // Model visibility toggle handlers
+          document.querySelectorAll('.model-checkbox').forEach(checkbox => {
+            checkbox.onchange = function() {
+              const modelName = this.getAttribute('data-model');
+              const isVisible = this.checked;
+             
+              if (!modelName) {
+                console.error('Error: data-model attribute is missing or invalid.');
+                return;
+              }
+
+              vscode.postMessage({ 
+                command: 'toggleModelVisibility',
+                modelName: modelName,
+                isVisible: isVisible
+              });
+            };
+          });
         })();
       </script>
     </body>
     </html>`;
+  }
+  
+  /**
+   * Render model visibility controls (checkboxes)
+   */
+  private renderModelVisibilityControls(): string {
+    // Only show controls if we have models
+    if (this.modelNames.length === 0) {
+      return '';
+    }
+    
+    const checkboxes = this.modelNames.map(modelName => {
+      const isChecked = !this.hiddenModels.has(modelName);
+      return `
+        <div class="model-checkbox-container">
+          <input 
+            type="checkbox" 
+            id="checkbox-${this.escapeHtml(modelName)}" 
+            class="model-checkbox"
+            data-model="${this.escapeHtml(modelName)}"
+            ${isChecked ? 'checked' : ''}
+          >
+          <label 
+            for="checkbox-${this.escapeHtml(modelName)}" 
+            class="model-checkbox-label"
+          >
+            ${this.escapeHtml(modelName)}
+          </label>
+        </div>
+      `;
+    }).join('');
+    
+    return `
+      <div class="model-visibility-controls">
+        ${checkboxes}
+      </div>
+    `;
   }
   
   /**
@@ -416,14 +521,19 @@ export class ChatWebView {
     }
     
     // Otherwise render a column for each available model
-    return this.modelNames.map(modelName => `
-      <div class="model-column">
+    return this.modelNames.map(modelName => {
+      // Check if this model is hidden
+      const isHidden = this.hiddenModels.has(modelName);
+      const hiddenClass = isHidden ? 'hidden-model' : '';
+      
+      return `
+      <div class="model-column ${hiddenClass}" data-model="${this.escapeHtml(modelName)}">
         <div class="model-header">${this.escapeHtml(modelName)}</div>
         <div class="model-content">
           ${this.renderModelResponse(modelName)}
         </div>
       </div>
-    `).join('');
+    `}).join('');
   }
   
   /**

@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import { ChatWebView } from "./chatWebview";
 import { StorageService } from "./storageService";
-import { log } from "console";
 
 /**
  * Data structure for AI model metadata
@@ -39,7 +38,7 @@ async function getAIModels(context: vscode.ExtensionContext): Promise<AIModel[]>
   const selectedModelIds = storageService.loadSelectedModels();
   
   if (!selectedModelIds || selectedModelIds.length === 0) {
-    console.log("No saved model selection found, using defaults");
+    //console.log("No saved model selection found, using defaults");
     return DEFAULT_AI_MODELS;
   }
   
@@ -65,7 +64,7 @@ async function getAIModels(context: vscode.ExtensionContext): Promise<AIModel[]>
     }
   }
   
-  console.log("Using selected models:", selectedModels.map(m => m.id));
+  //console.log("Using selected models:", selectedModels.map(m => m.id));
   return selectedModels;
 }
 
@@ -98,7 +97,7 @@ async function registerMultiModelChatParticipant(context: vscode.ExtensionContex
 
       // Build the user message with enhanced context and role assignment
       let userMessageText = request.prompt;
-      if (lastUserQuery && lastModelResponse) {
+      if (lastUserQuery || lastModelResponse) {
         userMessageText = `### Role ###\n` +
           `You are an expert AI assistant. Your task is to provide detailed, beginner-friendly explanations.\n` +
           `### Conversation History ###\n` +
@@ -135,12 +134,12 @@ async function registerMultiModelChatParticipant(context: vscode.ExtensionContex
       
       // If we still couldn't find any models, get any available
       if (selectedModels.length === 0) {
-        console.log("No selected models available, getting any available models");
+        //console.log("No selected models available, getting any available models");
         const chatModels = await vscode.lm.selectChatModels();
         selectedModels.push(...(chatModels || []));
       }
       
-      console.log("Current available models:", selectedModels?.map(model => model.id) || []);
+      //console.log("Current available models:", selectedModels?.map(model => model.id) || []);
       
       if (!selectedModels || selectedModels.length === 0) {
         response.markdown("No language models available. Please check your configuration.");
@@ -162,7 +161,7 @@ async function registerMultiModelChatParticipant(context: vscode.ExtensionContex
       
       // Use all available models for comparison (up to 3)
       const modelsToUse = selectedModels.slice(0, 6);
-      console.log(`Using ${modelsToUse.length} models for comparison:`, modelsToUse.map(m => m.id));
+      //console.log(`Using ${modelsToUse.length} models for comparison:`, modelsToUse.map(m => m.id));
       
       // Send the request to each available model in parallel
       const modelRequests = modelsToUse.map(async (model, index) => {
@@ -170,10 +169,12 @@ async function registerMultiModelChatParticipant(context: vscode.ExtensionContex
         const modelConfig = AI_MODELS.find(m => m.id === model.id);
         const modelName = modelConfig ? modelConfig.displayName : `Model ${index + 1}: ${model.id.split('/').pop() || model.id}`;
         
-        console.log(`Using model: ${model.id} as ${modelName}`);
+        //console.log(`Using model: ${model.id} as ${modelName}`);
         
         // Start showing typing indicator for this model
         chatWebView.startModelResponse(modelName);
+
+        console.log(`Sending request to model ${modelName}:`, userMessageText);
         
         let responseText = '';
         try {
@@ -190,9 +191,13 @@ async function registerMultiModelChatParticipant(context: vscode.ExtensionContex
             chatWebView.updateModelResponse(modelName, responseText);
           }
 
-          // Update the last query and response
-          lastUserQuery = request.prompt;
-          lastModelResponse = responseText;
+          // Check if responseText contains an error message
+          if (responseText.toLowerCase().includes('error:')) {
+            console.warn(`Error detected in responseText: ${responseText}`);
+            // Do not update lastModelResponse if an error is detected to avoid that is going to be used in the next request
+          } else {
+            lastModelResponse = responseText;
+          }
         } catch (error: any) {
           console.error(`Error processing request with ${modelName}:`, error);
           const errorMessage = getModelErrorMessage(error);
@@ -237,7 +242,7 @@ async function showModelSelectionDialog(context: vscode.ExtensionContext): Promi
 
     // Load previously selected models from storage
     const previouslySelectedModels = storageService.loadSelectedModels();
-    console.log("Previously selected models:", previouslySelectedModels);
+    //console.log("Previously selected models:", previouslySelectedModels);
     
     // Create a QuickPick UI for model selection
     const quickPick = vscode.window.createQuickPick();
@@ -259,7 +264,7 @@ async function showModelSelectionDialog(context: vscode.ExtensionContext): Promi
       const selectedModels = items.map(item => item.label);
       // Save immediately when selection changes
       storageService.saveSelectedModels(selectedModels);
-      console.log(`Selection changed, saved models: ${selectedModels.join(', ')}`);
+      //console.log(`Selection changed, saved models: ${selectedModels.join(', ')}`);
     });
 
     return new Promise<string[] | undefined>((resolve) => {
