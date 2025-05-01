@@ -10,6 +10,7 @@ export class ChatWebView {
   private lastUserMessage: string = '';
   private responses: Map<string, string> = new Map(); // model -> response
   private modelNames: string[] = []; // Track available models
+  private messageListenerRegistered: boolean = false;
   
   private constructor() {}
   
@@ -47,20 +48,17 @@ export class ChatWebView {
       }
     );
     
+    // Reset message listener state when panel is disposed
+    this.panel.onDidDispose(() => {
+      this.panel = undefined;
+      this.messageListenerRegistered = false;
+    });
+    
     // Initial HTML content
     this.panel.webview.html = this.getWebviewContent();
     
-    // Set up message handling
-    this.panel.webview.onDidReceiveMessage(message => {
-      if (message.command === 'clearChat') {
-        this.clearChat();
-      }
-    });
-    
-    // Reset when the panel is disposed
-    this.panel.onDidDispose(() => {
-      this.panel = undefined;
-    });
+    // Set up message handling - only register once per panel instance
+    this.setupMessageListener();
   }
   
   /**
@@ -117,6 +115,17 @@ export class ChatWebView {
     // Keep the model names to maintain column structure
     this.updateWebview();
   }
+
+  /**
+   * Reset model list to clear any previous models
+   */
+  public resetModels(): void {
+    this.modelNames = [];
+    this.responses.clear();
+    // Note: We don't clear lastUserMessage to preserve context
+    this.updateWebview();
+    console.log('Model list has been reset');
+  }
   
   /**
    * Update the webview content
@@ -125,6 +134,36 @@ export class ChatWebView {
     if (this.panel) {
       this.panel.webview.html = this.getWebviewContent();
     }
+  }
+  
+  /**
+   * Set up message listener for the webview
+   */
+  private setupMessageListener(): void {
+    if (!this.panel || this.messageListenerRegistered) {
+      return;
+    }
+    
+    console.log("Setting up ChatWebView message listener");
+    
+    this.panel.webview.onDidReceiveMessage(async (message) => {
+      console.log("ChatWebView received message:", message);
+      switch (message.command) {
+        case "clearChat":
+          this.clearChat();
+          break;
+        case "openModelSelection":
+          console.log("Received openModelSelection command");
+          try {
+            await vscode.commands.executeCommand("multi-model-chat-extension.selectModels");
+          } catch (error) {
+            console.error("Error executing model selection command:", error);
+          }
+          break;
+      }
+    });
+    
+    this.messageListenerRegistered = true;
   }
   
   /**
@@ -326,6 +365,7 @@ export class ChatWebView {
         <h2>AI Model Comparison</h2>
         <div class="actions">
           <button id="clearBtn">Clear Chat</button>
+          <button id="modelSelectionButton">Select Models</button>
         </div>
       </div>
       
@@ -336,16 +376,23 @@ export class ChatWebView {
       </div>
       <script>
         (function() {
+          const vscode = acquireVsCodeApi();
+          
           // Auto-scroll both columns to bottom on load
           document.querySelectorAll('.model-content').forEach(el => {
             el.scrollTop = el.scrollHeight;
           });
           
-          // Clear button handler
-          document.getElementById('clearBtn').addEventListener('click', () => {
-            const vscode = acquireVsCodeApi();
+          // Clear button handler - add with direct event handler
+          document.getElementById('clearBtn').onclick = function() {
             vscode.postMessage({ command: 'clearChat' });
-          });
+          };
+
+          // Model selection button handler - add with direct event handler
+          document.getElementById('modelSelectionButton').onclick = function() {
+            console.log("Model selection button clicked");
+            vscode.postMessage({ command: 'openModelSelection' });
+          };
         })();
       </script>
     </body>

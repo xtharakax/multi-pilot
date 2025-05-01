@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { ChatWebView } from "./chatWebview";
+import { StorageService } from "./storageService";
 import { log } from "console";
 
 /**
@@ -13,9 +14,9 @@ interface AIModel {
 }
 
 /**
- * Collection of models we want to use
+ * Collection of default models to use if no user selection exists
  */
-const AI_MODELS: AIModel[] = [
+const DEFAULT_AI_MODELS: AIModel[] = [
   { 
     id: 'gpt-4o', 
     name: 'GPT-4o', 
@@ -29,6 +30,44 @@ const AI_MODELS: AIModel[] = [
     matchPatterns: ['gemini', 'google', 'flash'] 
   }
 ];
+
+/**
+ * Get the current AI models based on user selection or defaults
+ */
+async function getAIModels(context: vscode.ExtensionContext): Promise<AIModel[]> {
+  const storageService = StorageService.getInstance(context);
+  const selectedModelIds = storageService.loadSelectedModels();
+  
+  if (!selectedModelIds || selectedModelIds.length === 0) {
+    console.log("No saved model selection found, using defaults");
+    return DEFAULT_AI_MODELS;
+  }
+  
+  // Convert selected model IDs into full AIModel objects
+  const selectedModels: AIModel[] = [];
+  
+  for (const modelId of selectedModelIds) {
+    // Check if this model exists in our defaults (for display name and patterns)
+    const existingModel = DEFAULT_AI_MODELS.find(m => m.id === modelId);
+    
+    if (existingModel) {
+      // Use the existing model configuration
+      selectedModels.push(existingModel);
+    } else {
+      // Create a new model configuration
+      const displayName = modelId.split('/').pop() || modelId;
+      selectedModels.push({
+        id: modelId,
+        name: displayName,
+        displayName: displayName,
+        matchPatterns: [modelId.toLowerCase()]
+      });
+    }
+  }
+  
+  console.log("Using selected models:", selectedModels.map(m => m.id));
+  return selectedModels;
+}
 
 /**
  * Helper to handle model errors and provide user-friendly messages
@@ -55,7 +94,7 @@ async function registerMultiModelChatParticipant(context: vscode.ExtensionContex
   vscode.chat.createChatParticipant(
     "vscode.multi-model-chat",
     async (request, chatContext, response, token) => {
-      console.log("Received chat request for multi-model-chat:", request);
+      //console.log("Received chat request for multi-model-chat:", request);
 
       // Build the user message with enhanced context and role assignment
       let userMessageText = request.prompt;
@@ -75,9 +114,14 @@ async function registerMultiModelChatParticipant(context: vscode.ExtensionContex
 
       const userMessage = vscode.LanguageModelChatMessage.User(userMessageText);
 
-      // Try to select each of our preferred models one by one
+      // Get current AI models based on user selection - read from storage each time
+      // to ensure we have the latest selection (in case JSON file was modified)
+      const AI_MODELS = await getAIModels(context);
+      
+      // Clear selectedModels to ensure we don't use old models
       const selectedModels: vscode.LanguageModelChat[] = [];
       
+      // Try each model in our list
       for (const modelConfig of AI_MODELS) {
         try {
           const modelMatches = await vscode.lm.selectChatModels({ id: modelConfig.id });
@@ -89,13 +133,14 @@ async function registerMultiModelChatParticipant(context: vscode.ExtensionContex
         }
       }
       
-      // If we couldn't find any of our specific models, get any available models
+      // If we still couldn't find any models, get any available
       if (selectedModels.length === 0) {
+        console.log("No selected models available, getting any available models");
         const chatModels = await vscode.lm.selectChatModels();
         selectedModels.push(...(chatModels || []));
       }
       
-      console.log("Available models:", selectedModels?.map(model => model.id) || []);
+      console.log("Current available models:", selectedModels?.map(model => model.id) || []);
       
       if (!selectedModels || selectedModels.length === 0) {
         response.markdown("No language models available. Please check your configuration.");
@@ -106,14 +151,17 @@ async function registerMultiModelChatParticipant(context: vscode.ExtensionContex
       const chatWebView = ChatWebView.getInstance();
       chatWebView.createOrShowWebview(context);
       
+      // Reset the webview model list before setting new models
+      chatWebView.resetModels();
+      
       // Set the user's message in the webview
       chatWebView.setUserMessage(request.prompt);
       
       // Tell VS Code chat what we're doing
-      response.markdown(`Processing your request using specified AI models. Please check the results in the panel to the right.`);
+      response.markdown(`Processing your request using ${selectedModels.length} AI model(s). Please check the results in the panel to the right.`);
       
-      // Use all available models for comparison (up to the 3 we specified)
-      const modelsToUse = selectedModels.slice(0, 3);
+      // Use all available models for comparison (up to 3)
+      const modelsToUse = selectedModels.slice(0, 6);
       console.log(`Using ${modelsToUse.length} models for comparison:`, modelsToUse.map(m => m.id));
       
       // Send the request to each available model in parallel
@@ -174,24 +222,96 @@ async function registerMultiModelChatParticipant(context: vscode.ExtensionContex
   );
 }
 
+async function showModelSelectionDialog(context: vscode.ExtensionContext): Promise<string[] | undefined> {
+  try {
+    // Initialize storage service
+    const storageService = StorageService.getInstance(context);
+    
+    // Fetch all available models
+    const availableModels = await vscode.lm.selectChatModels();
+
+    if (!availableModels || availableModels.length === 0) {
+      vscode.window.showWarningMessage("No language models available. Please check your configuration.");
+      return;
+    }
+
+    // Load previously selected models from storage
+    const previouslySelectedModels = storageService.loadSelectedModels();
+    console.log("Previously selected models:", previouslySelectedModels);
+    
+    // Create a QuickPick UI for model selection
+    const quickPick = vscode.window.createQuickPick();
+    quickPick.items = availableModels.map(model => ({ 
+      label: model.id,
+      picked: previouslySelectedModels.includes(model.id)
+    }));
+    quickPick.canSelectMany = true;
+    quickPick.title = "Select AI Models";
+    
+    // Pre-select the previously selected models
+    const preSelectedItems = quickPick.items.filter(item => 
+      previouslySelectedModels.includes(item.label)
+    );
+    quickPick.selectedItems = preSelectedItems;
+    
+    // Save models whenever the selection changes
+    quickPick.onDidChangeSelection(items => {
+      const selectedModels = items.map(item => item.label);
+      // Save immediately when selection changes
+      storageService.saveSelectedModels(selectedModels);
+      console.log(`Selection changed, saved models: ${selectedModels.join(', ')}`);
+    });
+
+    return new Promise<string[] | undefined>((resolve) => {
+      quickPick.onDidAccept(() => {
+        const selectedModels = quickPick.selectedItems.map(item => item.label);
+        quickPick.hide();
+        resolve(selectedModels);
+      });
+
+      quickPick.onDidHide(() => {
+        resolve(undefined);
+      });
+
+      quickPick.show();
+    });
+  } catch (error) {
+    console.error("Error fetching models for selection dialog:", error);
+    vscode.window.showErrorMessage("Failed to fetch models. Please try again.");
+    return;
+  }
+}
+
 export async function activate(context: vscode.ExtensionContext) {
-  console.log("Activating multi-model-chat extension");
-  
+
   // Register the chat participant
   await registerMultiModelChatParticipant(context);
-  
+
   // Register the search command
-  const disposable = vscode.commands.registerCommand(
+  const disposableSearch = vscode.commands.registerCommand(
     "multi-model-chat-extension.searchBuAgent",
     async () => {
       vscode.window.showInformationMessage("Multi-model Search activated!");
-      
+
       // Open the chat view with our participant
       await vscode.commands.executeCommand("vscode.chat.open", "vscode.multi-model-chat");
     }
   );
-  
-  context.subscriptions.push(disposable);
+
+  // Register the model selection command
+  const disposableModelSelection = vscode.commands.registerCommand(
+    "multi-model-chat-extension.selectModels",
+    async () => {
+      const selectedModels = await showModelSelectionDialog(context);
+      if (selectedModels && selectedModels.length > 0) {
+        vscode.window.showInformationMessage(`Selected Models: ${selectedModels.join(", ")}`);
+      } else if (selectedModels) {
+        vscode.window.showInformationMessage("No models selected.");
+      }
+    }
+  );
+
+  context.subscriptions.push(disposableSearch, disposableModelSelection);
 }
 
 export function deactivate() {
