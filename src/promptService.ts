@@ -57,10 +57,7 @@ You are an expert prompt engineer. Your task is to improve the given prompt by:
 3. Structuring it in a clear way
 4. Removing ambiguity
 5. Ensuring it will produce high-quality results
-
-### Audience ###
-The improved prompt will be used with a large language model like GPT-4 to generate accurate and helpful responses.
-
+6. Optimizing it for AI performance
 ### Current Prompt ###
 ${originalPrompt}
 

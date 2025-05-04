@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { marked } from 'marked';
+import { marked } from "marked";
 
 /**
  * Enhanced ChatWebView implementation with a split view for multiple models
@@ -7,16 +7,16 @@ import { marked } from 'marked';
 export class ChatWebView {
   private static instance: ChatWebView | undefined;
   private panel: vscode.WebviewPanel | undefined;
-  private lastUserMessage: string = '';
+  private lastUserMessage: string = "";
   private responses: Map<string, string> = new Map(); // model -> response
   private modelNames: string[] = []; // Track available models
   private hiddenModels: Set<string> = new Set(); // Track which models are hidden
   private messageListenerRegistered: boolean = false;
   private updateTimer: NodeJS.Timeout | undefined;
   private isInitialLoad: boolean = true;
-  
+
   private constructor() {}
-  
+
   /**
    * Get singleton instance of ChatWebView
    */
@@ -26,7 +26,7 @@ export class ChatWebView {
     }
     return ChatWebView.instance;
   }
-  
+
   /**
    * Create or show the webview panel
    */
@@ -36,21 +36,21 @@ export class ChatWebView {
       this.panel.reveal(vscode.ViewColumn.Beside);
       return;
     }
-    
+
     // Otherwise, create a new panel
     this.panel = vscode.window.createWebviewPanel(
-      'enhancedChatResponse',
-      'AI Model Comparison',
+      "enhancedChatResponse",
+      "AI Model Comparison",
       vscode.ViewColumn.Beside,
       {
         enableScripts: true,
         retainContextWhenHidden: true,
         localResourceRoots: [
-          vscode.Uri.joinPath(context.extensionUri, 'media')
-        ]
+          vscode.Uri.joinPath(context.extensionUri, "media"),
+        ],
       }
     );
-    
+
     // Set initial loading state
     this.isInitialLoad = true;
     this.panel.webview.html = this.getLoadingContent();
@@ -64,11 +64,11 @@ export class ChatWebView {
         this.updateTimer = undefined;
       }
     });
-    
+
     // Set up message handling - only register once per panel instance
     this.setupMessageListener();
   }
-  
+
   /**
    * Set the user message
    */
@@ -78,7 +78,7 @@ export class ChatWebView {
       this.debouncedUpdateWebview();
     }
   }
-  
+
   /**
    * Update response for a specific model
    */
@@ -98,7 +98,7 @@ export class ChatWebView {
     // Update the webview with debounce
     this.debouncedUpdateWebview();
   }
-  
+
   /**
    * Debounced update of the webview to prevent rapid successive updates
    */
@@ -106,15 +106,15 @@ export class ChatWebView {
     if (this.updateTimer) {
       clearTimeout(this.updateTimer);
     }
-    
+
     this.updateTimer = setTimeout(() => {
       if (this.panel) {
-        console.log("Updating ChatWebView content");
+        //console.log("Updating ChatWebView content");
         this.panel.webview.html = this.getWebviewContent();
       }
     }, 100); // 100ms debounce delay
   }
-  
+
   /**
    * Toggle model visibility
    */
@@ -126,35 +126,37 @@ export class ChatWebView {
     }
     this.updateWebview();
   }
-  
+
   /**
    * Start showing typing indicator for a model
    */
   public startModelResponse(modelName: string) {
-    this.isInitialLoad = false;  // Set isInitialLoad to false when we start getting responses
-    
+    this.isInitialLoad = false; // Set isInitialLoad to false when we start getting responses
+
     // Add to model names array if not already present
     if (!this.modelNames.includes(modelName)) {
       this.modelNames.push(modelName);
-      console.log(`Added model ${modelName} to visibility controls. Current models:`, this.modelNames);
     }
 
     // Set a loading animation as the initial response
-    this.responses.set(modelName, `<div class="typing-indicator">
+    this.responses.set(
+      modelName,
+      `<div class="typing-indicator">
       <span></span>
       <span></span>
       <span></span>
-    </div>`);
-    
+    </div>`
+    );
+
     // Use debounced update to prevent rapid successive updates
     this.debouncedUpdateWebview();
   }
-  
+
   /**
    * Clear the chat
    */
   public clearChat() {
-    this.lastUserMessage = '';
+    this.lastUserMessage = "";
     this.responses.clear();
     // Keep the model names to maintain column structure
     this.updateWebview();
@@ -168,19 +170,19 @@ export class ChatWebView {
     this.responses.clear();
     // Note: We don't clear lastUserMessage to preserve context
     this.updateWebview();
-    console.log('Model list has been reset');
+    console.log("Model list has been reset");
   }
-  
+
   /**
    * Update the webview content
    */
-  private updateWebview() {    
+  private updateWebview() {
     if (this.panel) {
       console.log("Updating ChatWebView content");
       this.panel.webview.html = this.getWebviewContent();
     }
   }
-  
+
   /**
    * Set up message listener for the webview
    */
@@ -188,9 +190,7 @@ export class ChatWebView {
     if (!this.panel || this.messageListenerRegistered) {
       return;
     }
-    
-    console.log("Setting up ChatWebView message listener");
-    
+
     this.panel.webview.onDidReceiveMessage(async (message) => {
       console.log("ChatWebView received message:", message);
       switch (message.command) {
@@ -198,41 +198,40 @@ export class ChatWebView {
           this.clearChat();
           break;
         case "openModelSelection":
-          console.log("Received openModelSelection command");
+          //console.log("Received openModelSelection command");
           try {
-            await vscode.commands.executeCommand("multi-model-chat-extension.selectModels");
+            await vscode.commands.executeCommand(
+              "multi-model-chat-extension.selectModels"
+            );
           } catch (error) {
-            console.error("Error executing model selection command:", error);
+            //console.error("Error executing model selection command:", error);
           }
           break;
         case "toggleModelVisibility":
-          console.log(`Toggling visibility for model: ${message.modelName}, visible: ${message.isVisible}`);
+          // console.log(
+          //   `Toggling visibility for model: ${message.modelName}, visible: ${message.isVisible}`
+          // );
           this.toggleModelVisibility(message.modelName, message.isVisible);
           break;
       }
     });
-    
+
     this.messageListenerRegistered = true;
   }
-  
+
   /**
    * Generate the HTML content for the webview
    */
   private getWebviewContent(): string {
     // Create a prominent loading message when there's no user message
-    const userMessageHtml = this.lastUserMessage
-      ? `<div class="user-query">
-           <div class="user-query-label">Your Query:</div>
-           <div class="user-query-text">${this.escapeHtml(this.lastUserMessage)}</div>
-         </div>`
-      : `<div class="loading-container">
-           <div class="loading-message">
-             <h2>Loading, please wait...</h2>
-             <div class="loading-spinner">
-               <div></div><div></div><div></div><div></div>
-             </div>
-           </div>
-         </div>`;
+    const userMessageHtml = `<div class="user-message-container">
+      <div class="user-query">
+        <div class="user-query-label">Your Query:</div>
+        <div class="user-query-text">${this.escapeHtml(
+          this.lastUserMessage
+        )}</div>
+      </div>
+    </div>`;
 
     return `<!DOCTYPE html>
     <html lang="en">
@@ -296,6 +295,8 @@ export class ChatWebView {
           display: flex;
           flex: 1;
           overflow: hidden;
+          height: calc(70vh - 50px);
+          min-height: 200px;
         }
         
         .model-column {
@@ -324,21 +325,16 @@ export class ChatWebView {
           padding: 15px;
         }
         
+        .user-message-container {
+          max-height: 30vh;
+          overflow-y: auto;
+          border-bottom: 1px solid var(--border-color);
+          background-color: var(--vscode-editor-lineHighlightBackground);
+        }
+        
         .user-query {
           padding: 15px;
-          background-color: var(--vscode-editor-lineHighlightBackground);
-          margin-bottom: 15px;
-          border-bottom: 1px solid var(--border-color);
-        }
-        
-        .user-query-label {
-          font-size: 12px;
-          color: var(--vscode-descriptionForeground);
-          margin-bottom: 5px;
-        }
-        
-        .user-query-text {
-          font-weight: 500;
+          margin-bottom: 0;
         }
         
         .message {
@@ -541,7 +537,7 @@ export class ChatWebView {
 
           // Model selection button handler - add with direct event handler
           document.getElementById('modelSelectionButton').onclick = function() {
-            console.log("Model selection button clicked");
+            //console.log("Model selection button clicked");
             vscode.postMessage({ command: 'openModelSelection' });
           };
           
@@ -568,7 +564,7 @@ export class ChatWebView {
     </body>
     </html>`;
   }
-  
+
   /**
    * Generate the initial loading content for the webview
    */
@@ -601,26 +597,27 @@ export class ChatWebView {
     </body>
     </html>`;
   }
-  
+
   /**
    * Render model visibility controls (checkboxes)
    */
   private renderModelVisibilityControls(): string {
     // Only show controls if we have models
     if (this.modelNames.length === 0) {
-      return '';
+      return "";
     }
-    
-    const checkboxes = this.modelNames.map(modelName => {
-      const isChecked = !this.hiddenModels.has(modelName);
-      return `
+
+    const checkboxes = this.modelNames
+      .map((modelName) => {
+        const isChecked = !this.hiddenModels.has(modelName);
+        return `
         <div class="model-checkbox-container">
           <input 
             type="checkbox" 
             id="checkbox-${this.escapeHtml(modelName)}" 
             class="model-checkbox"
             data-model="${this.escapeHtml(modelName)}"
-            ${isChecked ? 'checked' : ''}
+            ${isChecked ? "checked" : ""}
           >
           <label 
             for="checkbox-${this.escapeHtml(modelName)}" 
@@ -630,15 +627,16 @@ export class ChatWebView {
           </label>
         </div>
       `;
-    }).join('');
-    
+      })
+      .join("");
+
     return `
       <div class="model-visibility-controls">
         ${checkboxes}
       </div>
     `;
   }
-  
+
   /**
    * Render model columns dynamically based on available models
    */
@@ -654,39 +652,46 @@ export class ChatWebView {
         </div>
       `;
     }
-    
+
     // Otherwise render a column for each available model
-    return this.modelNames.map(modelName => {
-      // Check if this model is hidden
-      const isHidden = this.hiddenModels.has(modelName);
-      const hiddenClass = isHidden ? 'hidden-model' : '';
-      
-      return `
-      <div class="model-column ${hiddenClass}" data-model="${this.escapeHtml(modelName)}">
+    return this.modelNames
+      .map((modelName) => {
+        // Check if this model is hidden
+        const isHidden = this.hiddenModels.has(modelName);
+        const hiddenClass = isHidden ? "hidden-model" : "";
+
+        return `
+      <div class="model-column ${hiddenClass}" data-model="${this.escapeHtml(
+          modelName
+        )}">
         <div class="model-header">${this.escapeHtml(modelName)}</div>
         <div class="model-content">
           ${this.renderModelResponse(modelName)}
         </div>
       </div>
-    `}).join('');
+    `;
+      })
+      .join("");
   }
-  
+
   /**
    * Render the user query section
    */
   private renderUserQuery(): string {
     if (!this.lastUserMessage) {
-      return '';
+      return "";
     }
-    
+
     return `
       <div class="user-query">
         <div class="user-query-label">Your Query:</div>
-        <div class="user-query-text">${this.escapeHtml(this.lastUserMessage)}</div>
+        <div class="user-query-text">${this.escapeHtml(
+          this.lastUserMessage
+        )}</div>
       </div>
     `;
   }
-  
+
   /**
    * Render response for a specific model
    */
@@ -720,7 +725,7 @@ export class ChatWebView {
       </div>
     </div>`;
   }
-  
+
   /**
    * Format markdown text to HTML using the 'marked' library
    */
@@ -732,16 +737,16 @@ export class ChatWebView {
     // Use the 'marked' library to convert Markdown to HTML
     return await marked.parse(markdown);
   }
-  
+
   /**
    * Escape HTML special characters
    */
   private escapeHtml(text: string): string {
     return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 }
