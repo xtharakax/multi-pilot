@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { ChatWebView } from "./chatWebview";
 import { StorageService } from "./storageService";
+import { PromptService } from "./promptService";
 
 /**
  * Data structure for AI model metadata
@@ -88,28 +89,31 @@ function getModelErrorMessage(error: any): string {
 async function registerMultiModelChatParticipant(context: vscode.ExtensionContext) {
   let lastUserQuery: string | null = null;
   let lastModelResponse: string | null = null;
+  const promptService = PromptService.getInstance();
 
   // Create the chat participant with the ID from package.json
   vscode.chat.createChatParticipant(
     "vscode.multi-model-chat",
     async (request, chatContext, response, token) => {
-      //console.log("Received chat request for multi-model-chat:", request);
+      // First, improve the user's prompt using GPT-4o
+      const improvedPrompt = await promptService.improvePrompt(request.prompt);
 
       // Build the user message with enhanced context and role assignment
-      let userMessageText = request.prompt;
+      let userMessageText = improvedPrompt;
       if (lastUserQuery || lastModelResponse) {
-        userMessageText = `### Role ###\n` +
-          `You are an expert AI assistant. Your task is to provide detailed, beginner-friendly explanations.\n` +
+        userMessageText = 
           `### Conversation History ###\n` +
           `Previous Question: ${lastUserQuery}\n` +
           `Previous Response: ${lastModelResponse}\n` +
           `### Current Question ###\n` +
-          `${request.prompt}`;
+          `${improvedPrompt}`;
       } else {
-        userMessageText = `### Role ###\n` +
-          `You are an expert AI assistant. Your task is to provide detailed, beginner-friendly explanations.\n` +
-          `### Current Question ###\n${request.prompt}`;
+        userMessageText = 
+          `### Current Question ###\n${improvedPrompt}`;
       }
+
+      // Store the original prompt for history
+      lastUserQuery = request.prompt;
 
       const userMessage = vscode.LanguageModelChatMessage.User(userMessageText);
 
