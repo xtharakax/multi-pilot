@@ -1,71 +1,50 @@
-# multi-model-chat-extension README
+# 🚀 Multi-Pilot Extension
 
-This is the README for your extension "multi-model-chat-extension". After writing up a brief description, we recommend including the following sections.
+Multi-Pilot is a Visual Studio Code extension that enables developers to interact with multiple AI language models simultaneously, allowing for direct comparison of responses from different AI models.
 
-## Features
+## ✨ Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- 🌐 **Multi-Model Support**: Interact with multiple AI models simultaneously (supports up to 6 models).
+- 🖥️ **Real-Time Response Comparison**: View responses from different AI models side by side in a split view.
+- 🎛️ **Model Selection**: Choose which AI models to use through a simple selection interface.
+- 💾 **Persistent Settings**: Your model preferences are saved between sessions.
+- 🧠 **Enhanced Prompts**: Automatic prompt enhancement using GPT-4o to improve response quality.
+- 🕒 **Conversation History**: Maintains context from previous interactions for more coherent responses.
+- 🔄 **Dynamic Response Updates**: Real-time streaming of AI responses with typing indicators.
+- 👁️ **Model Visibility Control**: Toggle visibility of individual model responses.
 
-For example if there is an image subfolder under your extension project workspace:
+## 🚀 Getting Started
 
-\!\[feature X\]\(images/feature-x.png\)
+1. 📥 **Install** the Multi-Pilot extension from the VS Code Marketplace.
+2. 📂 **Open** the chat view in the VS Code sidebar.
+3. 💬 **Use** the chat participant `@multi-pilot` and ask your question.
+4. ✅ **Select** the AI models you want to interact with using the "Select Models" button.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## ⚙️ Configuration
 
-## Requirements
+You can configure the extension by:
+- 🔘 Clicking the "Select Models" button in the Multi-Pilot chat view to choose which AI models to use.
+- ⚙️ Adjusting settings in the VS Code settings panel under the "Multi-Pilot" section.
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## ⚠️ Limitations
 
-## Extension Settings
+- 🚫 Model availability depends on your VS Code environment and installed AI capabilities.
+- ❌ Does not provide default chat support features from GitHub Copilot, such as attaching context or hash/slash functions.
+- 🗂️ Conversation history is not saved between sessions.
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+## 🤝 Contributing
 
-For example:
+Contributions are welcome! If you'd like to contribute:
+1. 🍴 **Fork** the repository.
+2. ✏️ **Make** your changes.
+3. 🔄 **Submit** a pull request.
 
-This extension contributes the following settings:
+For major changes, please open an issue first to discuss what you would like to change.
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+## 📜 License
 
-## Known Issues
+This extension is released under the MIT License. See the [LICENSE](./LICENSE) file for details.
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+## 📂 Repository
 
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+The source code for this extension is available on GitHub: [Multi-Pilot Repository](https://github.com/xtharakax/multi-pilot.git)
