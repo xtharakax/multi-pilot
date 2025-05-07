@@ -93,7 +93,7 @@ async function registerMultiModelChatParticipant(context: vscode.ExtensionContex
 
   // Create the chat participant with the ID from package.json
   vscode.chat.createChatParticipant(
-    "vscode.multi-model-chat",
+    "vscode.multi-pilot",
     async (request, chatContext, response, token) => {
       // First, improve the user's prompt using GPT-4o
       const improvedPrompt = await promptService.improvePrompt(request.prompt);
@@ -304,18 +304,18 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Register the search command
   const disposableSearch = vscode.commands.registerCommand(
-    "multi-model-chat-extension.searchBuAgent",
+    "multi-pilot.searchBuAgent",
     async () => {
-      vscode.window.showInformationMessage("Multi-model Search activated!");
+      vscode.window.showInformationMessage("Multi-Pilot Search activated!");
 
       // Open the chat view with our participant
-      await vscode.commands.executeCommand("vscode.chat.open", "vscode.multi-model-chat");
+      await vscode.commands.executeCommand("vscode.chat.open", "vscode.multi-pilot");
     }
   );
 
   // Register the model selection command
   const disposableModelSelection = vscode.commands.registerCommand(
-    "multi-model-chat-extension.selectModels",
+    "multi-pilot.selectModels",
     async () => {
       const selectedModels = await showModelSelectionDialog(context);
       if (selectedModels && selectedModels.length > 0) {
@@ -330,5 +330,5 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
-  console.log("Deactivating multi-model-chat extension");
+  console.log("Deactivating multi-pilot extension");
 }

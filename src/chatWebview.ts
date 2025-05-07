@@ -40,7 +40,7 @@ export class ChatWebView {
     // Otherwise, create a new panel
     this.panel = vscode.window.createWebviewPanel(
       "enhancedChatResponse",
-      "AI Model Comparison",
+      "Multi-Pilot",
       vscode.ViewColumn.Beside,
       {
         enableScripts: true,
@@ -201,7 +201,7 @@ export class ChatWebView {
           //console.log("Received openModelSelection command");
           try {
             await vscode.commands.executeCommand(
-              "multi-model-chat-extension.selectModels"
+              "multi-pilot.selectModels"
             );
           } catch (error) {
             //console.error("Error executing model selection command:", error);
@@ -238,7 +238,7 @@ export class ChatWebView {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>AI Model Comparison</title>
+      <title>Multi-Pilot</title>
       <style>
         :root {
           --user-message-bg: var(--vscode-button-background);
@@ -507,7 +507,7 @@ export class ChatWebView {
     </head>
     <body>
       <div class="header">
-        <h2>AI Model Comparison</h2>
+        <h2>Multi-Pilot</h2>
         <div class="actions">
           <button id="clearBtn">Clear Chat</button>
           <button id="modelSelectionButton">Select Models</button>
