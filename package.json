@@ -1,6 +1,7 @@
 {
-  "name": "multi-model-chat-extension",
-  "displayName": "multi-model Search",
+  "name": "multi-pilot",
+  "displayName": "Multi-Pilot",
+  "publisher": "pubudutharaka",
   "description": "",
   "version": "0.0.1",
   "engines": {
@@ -17,15 +18,15 @@
   "contributes": {
     "commands": [
       {
-        "command": "multi-model-chat-extension.searchBuAgent",
-        "title": "multi-model Search"
+        "command": "multi-pilot.searchBuAgent",
+        "title": "Multi-Pilot Search"
       }
     ],
     "chatParticipants": [
       {
-        "id": "vscode.multi-model-chat",
-        "name": "multi-model-chat",
-        "description": "multi-model chat"
+        "id": "vscode.multi-pilot",
+        "name": "multi-pilot",
+        "description": "Multi-pilot chat"
       }
     ]
   },
