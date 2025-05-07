@@ -2,8 +2,9 @@
   "name": "multi-pilot",
   "displayName": "Multi-Pilot",
   "publisher": "pubudutharaka",
-  "description": "",
-  "version": "0.0.1",
+  "description": "Multi-Pilot is a Visual Studio Code extension that enables developers to interact with multiple AI language models simultaneously, allowing for direct comparison of responses from different AI models",
+  "icon": "images/icon.png",
+  "version": "1.0.0",
   "engines": {
     "vscode": "^1.97.0"
   },
@@ -59,5 +60,10 @@
   },
   "dependencies": {
     "marked": "^15.0.11"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xtharakax/multi-pilot.git"
+  },
+  "homepage": "https://github.com/xtharakax/multi-pilot/blob/main/README.md"
 }
