@@ -21,8 +21,32 @@
       {
         "command": "multi-pilot.searchBuAgent",
         "title": "Multi-Pilot Search"
+      },
+      {
+        "command": "multi-pilot.selectModels",
+        "title": "Multi-Pilot: Select Models"
+      },
+      {
+        "command": "multi-pilot.enhancePrompt",
+        "title": "Multi-Pilot: Enhance Prompt"
       }
     ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorHasSelection",
+          "command": "multi-pilot.enhancePrompt",
+          "group": "1_modification"
+        }
+      ],
+      "chat/context": [
+        {
+          "command": "multi-pilot.enhancePrompt",
+          "when": "chatLocation == 'panel'",
+          "group": "navigation"
+        }
+      ]
+    },
     "chatParticipants": [
       {
         "id": "vscode.multi-pilot",

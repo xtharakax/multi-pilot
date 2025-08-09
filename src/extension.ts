@@ -326,7 +326,112 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  context.subscriptions.push(disposableSearch, disposableModelSelection);
+  // Register enhance prompt command
+  const disposableEnhancePrompt = vscode.commands.registerCommand(
+    "multi-pilot.enhancePrompt",
+    async (...args: any[]) => {
+      console.log("[multi-pilot] Enhance prompt command clicked", { args });
+      
+      try {
+        let textToEnhance = '';
+
+        // If no text from chat context, try to get selected text from active editor
+        if (!textToEnhance) {
+          const editor = vscode.window.activeTextEditor;
+          if (editor) {
+            const selection = editor.selection;
+            const selectedText = editor.document.getText(selection);
+            
+            if (selectedText && selectedText.trim().length > 0) {
+              textToEnhance = selectedText;
+            }
+          }
+        }
+
+        // If still no text, try clipboard
+        if (!textToEnhance || textToEnhance.trim().length === 0) {
+          try {
+            const clipboardText = await vscode.env.clipboard.readText();
+            if (clipboardText && clipboardText.trim().length > 0) {
+              const useClipboard = await vscode.window.showQuickPick(
+                ['Yes', 'No'], 
+                { 
+                  placeHolder: `Use text from clipboard? "${clipboardText.substring(0, 50)}${clipboardText.length > 50 ? '...' : ''}"` 
+                }
+              );
+              if (useClipboard === 'Yes') {
+                textToEnhance = clipboardText;
+              }
+            }
+          } catch (error) {
+            console.log("Could not read clipboard:", error);
+          }
+        }
+
+        // If still no text, ask user to input text manually
+        if (!textToEnhance || textToEnhance.trim().length === 0) {
+          const inputText = await vscode.window.showInputBox({
+            prompt: "Enter the text you want to enhance:",
+            placeHolder: "Type your prompt here...",
+            value: ""
+          });
+          
+          if (inputText && inputText.trim().length > 0) {
+            textToEnhance = inputText;
+          } else {
+            vscode.window.showWarningMessage("No text provided to enhance.");
+            return;
+          }
+        }
+
+        console.log("Text to enhance:", textToEnhance);
+
+        // Show progress while enhancing
+        const enhancedPrompt = await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: "Enhancing prompt...",
+          cancellable: false
+        }, async (progress) => {
+          // Use PromptService to improve the text
+          const promptService = PromptService.getInstance();
+          return await promptService.enhancePromptWithDefaultModel(textToEnhance);
+        });
+
+        // Always show the enhanced prompt and let user decide what to do with it
+        const action = await vscode.window.showInformationMessage(
+          "Prompt enhanced successfully! What would you like to do?",
+          "Copy to Clipboard", 
+          "Open in New Document"
+        );
+
+        switch (action) {
+
+          case "Copy to Clipboard":
+            await vscode.env.clipboard.writeText(enhancedPrompt);
+            vscode.window.showInformationMessage("Enhanced prompt copied to clipboard!");
+            break;
+            
+          case "Open in New Document":
+            const doc = await vscode.workspace.openTextDocument({
+              content: enhancedPrompt,
+              language: 'markdown'
+            });
+            await vscode.window.showTextDocument(doc);
+            break;
+            
+          default:
+            // User cancelled or closed the dialog
+            break;
+        }
+
+      } catch (error) {
+        console.error("Error enhancing prompt:", error);
+        vscode.window.showErrorMessage(`Failed to enhance prompt: ${error}`);
+      }
+    }
+  );
+
+  context.subscriptions.push(disposableSearch, disposableModelSelection, disposableEnhancePrompt);
 }
 
 export function deactivate() {
