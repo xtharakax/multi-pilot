@@ -335,6 +335,16 @@ export async function activate(context: vscode.ExtensionContext) {
             language: document.languageId,
             fileName: document.fileName.split(/[\\\/]/).pop() || 'untitled'
           };
+
+          // Check for selected text first
+          const selection = editor.selection;
+          if (!selection.isEmpty) {
+            const selectedText = document.getText(selection);
+            if (selectedText && selectedText.trim().length > 0) {
+              editorContext = {...editorContext, text: selectedText };
+              console.log("Using selected text from editor:", selectedText.substring(0, 200) + "...");
+            }
+          }
         }
 
         if (!textToEnhance || textToEnhance.trim().length === 0) {
@@ -342,7 +352,7 @@ export async function activate(context: vscode.ExtensionContext) {
             const clipboardText = await vscode.env.clipboard.readText();
             if (clipboardText && clipboardText.trim().length > 0) {
               textToEnhance = clipboardText;
-              console.log("Using text from clipboard:", clipboardText.substring(0, 100) + "...");
+              console.log("Using text from clipboard:", clipboardText.substring(0, 500) + "...");
             }
           } catch (error) {
             console.log("Could not read clipboard:", error);
@@ -372,7 +382,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }, async (progress) => {
           // Use PromptService to improve the text with context
           const promptService = PromptService.getInstance();
-          return await promptService.enhancePromptWithBothTemplates(textToEnhance, editorContext);
+          return await promptService.enhancePromptWithBothTemplates(textToEnhance, editorContext || { text: '', language: 'plaintext', fileName: 'untitled' });
         });
       
 
