@@ -61,6 +61,7 @@ The Enhanced Prompt Engineering feature helps you intelligently improve prompts 
    - Manual input via dialog box
 
 ### Improved Architecture
+
 - **Modular Design**: Refactored prompt templates into separate modules for better maintainability
 - **Template System**: Extensible prompt template system supporting basic, advanced, and custom enhancement strategies
 - **Error Handling**: Improved error handling and fallback mechanisms

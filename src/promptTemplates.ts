@@ -32,6 +32,29 @@ Transform the above prompt into an enhanced version that will produce superior r
 **Important**: Return ONLY the enhanced prompt without any explanations, prefixes, or additional commentary.`;
 
 /**
+ * Lite enhancement prompt template with simplified, efficient format
+ */
+export const LITE_ENHANCEMENT_PROMPT = (originalPrompt: string): string => `You are an expert prompt engineer. Transform user prompts into precise, self-contained, and actionable instructions.
+
+Rules
+
+Ensure clarity, conciseness, and unambiguous wording.
+Add relevant context and specifications where needed.
+Organize logically with clear roles and steps.
+Assign appropriate AI roles for the task.
+Apply effective prompt engineering techniques (chain-of-thought, few-shot learning, etc.).
+Preserve original intent but improve specificity and completeness.
+Optimize for maximum AI comprehension and performance.
+
+Original Prompt
+
+${originalPrompt}
+
+Task
+
+Rewrite the prompt into a refined version that is clear, well-structured, and directly usable by AI models.`;
+
+/**
  * Basic improvement prompt template for general prompt enhancement
  */
 export const BASIC_IMPROVEMENT_PROMPT = (originalPrompt: string): string => `
@@ -56,6 +79,88 @@ Please provide an improved version of this prompt that will help get better resu
 - Make it optimized for AI performance
 
 Return ONLY the improved prompt, with no explanations or additional text.`;
+
+/**
+ * Context-aware enhancement prompt template that uses editor context for better results
+ */
+export const CONTEXT_AWARE_ENHANCEMENT_PROMPT = (
+    originalPrompt: string,
+    editorContext: {
+        text: string;
+        language: string;
+        fileName: string;
+    }
+): string => `
+### System Role ###
+You are an expert prompt engineer specializing in optimizing prompts for AI models. Your goal is to transform user prompts into highly effective, clear, and actionable instructions using the provided context.
+
+### Context Information ###
+**Language**: ${editorContext.language}
+**File Content Preview**: 
+\`\`\`${editorContext.language}
+${editorContext.text.substring(0, 2000)}${editorContext.text.length > 2000 ? '\n... (content truncated)' : ''}
+\`\`\`
+
+### Enhancement Guidelines ###
+1. **Context Awareness**: Use the file context to understand the domain and purpose
+2. **Language-Specific**: Consider the programming language or file type when enhancing
+3. **Clarity**: Remove ambiguity and make instructions crystal clear
+4. **Specificity**: Add relevant details based on the context provided
+5. **Structure**: Organize the prompt logically with clear sections
+6. **Completeness**: Ensure all necessary information is included
+7. **Optimization**: Structure for maximum AI comprehension and performance
+8. **Intent Preservation**: Maintain the original goal and meaning
+
+### Original Prompt ###
+${originalPrompt}
+
+### Task ###
+Transform the above prompt into an enhanced version that will produce superior results from AI models. Consider the context from the active file to:
+- Add relevant technical details and specifications
+- Include appropriate examples based on the file content if needed
+- Use domain-specific terminology correctly
+- Structure the request for the specific context (coding, documentation, etc.)
+- Assign a clear role to the AI based on the context using the file content
+- Identify the most effective prompt engineering techniques for this domain
+
+**Important**: Return ONLY the enhanced prompt without any explanations, prefixes, or additional commentary.`;
+
+/**
+ * Lite context-aware enhancement prompt template with simplified, efficient format
+ */
+export const LITE_CONTEXT_AWARE_ENHANCEMENT_PROMPT = (
+    originalPrompt: string,
+    editorContext: {
+        text: string;
+        language: string;
+        fileName: string;
+    }
+): string => `You are an expert prompt engineer. Transform user prompts into precise, self-contained, and actionable instructions using the given context.
+
+Context
+
+Language: ${editorContext.language}
+File Preview:
+\`\`\`${editorContext.language}
+${editorContext.text.substring(0, 2000)}${editorContext.text.length > 2000 ? '\n... (truncated)' : ''}
+\`\`\`
+
+Rules
+
+Use file context and language to refine the prompt.
+Ensure clarity, conciseness, and unambiguous wording.
+Add technical/domain-specific details when relevant.
+Organize logically with clear roles/steps.
+Preserve original intent but improve specificity and completeness.
+Optimize for maximum AI comprehension.
+
+Original Prompt
+
+${originalPrompt}
+
+Task
+
+Rewrite the prompt into a refined version that is clear, context-aware, domain-optimized, and directly usable.`;
 
 /**
  * Template for creating custom enhancement prompts with specific requirements

@@ -1,7 +1,10 @@
 import * as vscode from "vscode";
 import { 
     ADVANCED_ENHANCEMENT_PROMPT, 
-    BASIC_IMPROVEMENT_PROMPT, 
+    BASIC_IMPROVEMENT_PROMPT,
+    CONTEXT_AWARE_ENHANCEMENT_PROMPT,
+    LITE_CONTEXT_AWARE_ENHANCEMENT_PROMPT,
+    LITE_ENHANCEMENT_PROMPT
 } from "./promptTemplates";
 
 /**
@@ -44,9 +47,16 @@ export class PromptService {
     }
 
     /**
-     * Enhance the user's prompt using the latest default LLM model
+     * Enhance the user's prompt using the latest default LLM model with optional context
      */
-    public async enhancePromptWithDefaultModel(originalPrompt: string): Promise<string> {
+    public async enhancePromptWithDefaultModel(
+        originalPrompt: string, 
+        editorContext?: {
+            text: string;
+            language: string;
+            fileName: string;
+        }
+    ): Promise<string> {
         if (!this.defaultModel) {
             const initialized = await this.initializeDefaultModel();
             if (!initialized) {
@@ -56,26 +66,35 @@ export class PromptService {
         }
 
         try {
-            const enhancementPrompt = ADVANCED_ENHANCEMENT_PROMPT(originalPrompt);
-
-            const userMessage = vscode.LanguageModelChatMessage.User(enhancementPrompt);
-            let enhancedPrompt = '';
-
-            // Send request to the default model
-            if (this.defaultModel) {
-                const response = await this.defaultModel.sendRequest([userMessage]);
-                for await (const chunk of response.text) {
-                    enhancedPrompt += chunk;
-                }
-
-                console.log('Original prompt:', originalPrompt);
-                console.log('Enhanced prompt (using default model):', enhancedPrompt);
-                console.log('Model used:', this.defaultModel.id);
-
-                return enhancedPrompt.trim();
+            // Create both enhancement prompts for parallel processing
+            let advancePrompt = '';
+            let litePrompt = '';
+            
+            if (editorContext && editorContext.text.trim().length > 0) {
+                // Use context-aware enhancement when editor context is available
+                advancePrompt = CONTEXT_AWARE_ENHANCEMENT_PROMPT(originalPrompt, editorContext);
+                litePrompt = LITE_CONTEXT_AWARE_ENHANCEMENT_PROMPT(originalPrompt, editorContext);
+            } else {
+                // Fallback to standard enhancement without context
+                advancePrompt = ADVANCED_ENHANCEMENT_PROMPT(originalPrompt);
+                litePrompt = LITE_ENHANCEMENT_PROMPT(originalPrompt);
             }
 
-            return originalPrompt;
+            // Process both prompts in parallel using existing method
+            const [liteResult, verboseResult] = await Promise.all([
+                this.processEnhancement(litePrompt, 'LITE'),
+                this.processEnhancement(advancePrompt, 'ADVANCE')
+            ]);
+
+            // Create a default editorContext if none provided
+            const contextForDisplay = editorContext || {
+                text: '',
+                language: 'text',
+                fileName: 'No file selected'
+            };
+
+            // Use existing comparison document method
+            return this.createComparisonDocument(originalPrompt, liteResult, verboseResult, contextForDisplay);
         } catch (error) {
             console.error('Error enhancing prompt with default model:', error);
             return originalPrompt;
@@ -119,5 +138,113 @@ export class PromptService {
             console.error('Error improving prompt:', error);
             return originalPrompt;
         }
+    }
+
+    /**
+     * Enhance prompts using both LITE and FULL context-aware templates in parallel
+     * Returns a formatted document with separate results
+     */
+    public async enhancePromptWithBothTemplates(
+        originalPrompt: string,
+        editorContext: {
+            text: string;
+            language: string;
+            fileName: string;
+        }
+    ): Promise<string> {
+        if (!this.defaultModel) {
+            const initialized = await this.initializeDefaultModel();
+            if (!initialized) {
+                console.log('Could not initialize default model, returning original prompt');
+                return this.createComparisonDocument(originalPrompt, originalPrompt, originalPrompt, editorContext);
+            }
+        }
+
+        try {
+            // Create both enhancement prompts
+            const litePrompt = LITE_CONTEXT_AWARE_ENHANCEMENT_PROMPT(originalPrompt, editorContext);
+            const fullPrompt = CONTEXT_AWARE_ENHANCEMENT_PROMPT(originalPrompt, editorContext);
+
+            // Process both templates in parallel
+            const [liteResult, fullResult] = await Promise.all([
+                this.processEnhancement(litePrompt, 'LITE_CONTEXT_AWARE'),
+                this.processEnhancement(fullPrompt, 'CONTEXT_AWARE')
+            ]);
+
+            // Create formatted document with both results
+            return this.createComparisonDocument(originalPrompt, liteResult, fullResult, editorContext);
+
+        } catch (error) {
+            console.error('Error enhancing prompt with both templates:', error);
+            return this.createComparisonDocument(originalPrompt, originalPrompt, originalPrompt, editorContext);
+        }
+    }
+
+    /**
+     * Process a single enhancement request
+     */
+    private async processEnhancement(enhancementPrompt: string, templateType: string): Promise<string> {
+        try {
+            const userMessage = vscode.LanguageModelChatMessage.User(enhancementPrompt);
+            let enhancedPrompt = '';
+
+            if (this.defaultModel) {
+                const response = await this.defaultModel.sendRequest([userMessage]);
+                for await (const chunk of response.text) {
+                    enhancedPrompt += chunk;
+                }
+
+                console.log(`Enhanced prompt (${templateType}):`, enhancedPrompt);
+                return enhancedPrompt.trim();
+            }
+
+            return 'Enhancement failed: No model available';
+        } catch (error) {
+            console.error(`Error processing ${templateType} enhancement:`, error);
+            return `Enhancement failed: ${error}`;
+        }
+    }
+
+    /**
+     * Create a formatted comparison document
+     */
+    private createComparisonDocument(
+        originalPrompt: string,
+        liteResult: string,
+        fullResult: string,
+        editorContext: {
+            text: string;
+            language: string;
+            fileName: string;
+        }
+    ): string {
+        return `# 🚀 Multi-Pilot Prompt Enhancement Comparison
+
+---
+
+## 📝 Original Prompt
+
+\`\`\`
+${originalPrompt}
+\`\`\`
+
+---
+
+## ⚡ Lite Enhancement Result
+
+
+\`\`\`
+${liteResult}
+\`\`\`
+
+---
+
+## 🔬 Full Enhancement Result
+
+
+\`\`\`
+${fullResult}
+\`\`\`
+`;
     }
 }
