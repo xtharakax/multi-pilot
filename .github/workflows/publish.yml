@@ -16,8 +16,18 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Upgrade npm
+        run: npm install -g npm@latest
+
+      - name: Clean npm cache
+        run: npm cache clean --force
+
       - name: Install dependencies
         run: npm install
+
+      - name: Show npm debug log on failure
+        if: failure()
+        run: cat /home/runner/.npm/_logs/*.log || true
 
       - name: Install vsce
         run: npm install -g vsce
@@ -26,3 +36,4 @@ jobs:
         env:
           VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
         run: vsce publish --pat $VSCE_TOKEN
+
