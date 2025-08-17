@@ -1,4 +1,4 @@
-# 🚀 Multi-Pilot Extension v1.2.0
+# 🚀 Multi-Pilot Extension v1.2.1
 
 Multi-Pilot brings two powerful capabilities to VS Code:
 
