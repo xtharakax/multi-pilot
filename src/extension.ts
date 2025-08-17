@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { ChatWebView } from "./chatWebview";
 import { StorageService } from "./storageService";
 import { PromptService } from "./promptService";
+import { EnhancePromptHandler } from "./enhancePromptHandler";
 
 /**
  * Data structure for AI model metadata
@@ -42,7 +43,7 @@ async function getAIModels(context: vscode.ExtensionContext): Promise<AIModel[]>
     return DEFAULT_AI_MODELS;
   }
   
-  // Convert selected model IDs into full AIModel objects
+  // Convert selected model IDs into pro AIModel objects
   const selectedModels: AIModel[] = [];
   
   for (const modelId of selectedModelIds) {
@@ -318,174 +319,13 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   // Register enhance prompt command
+  const enhancePromptHandler = new EnhancePromptHandler();
   const disposableEnhancePrompt = vscode.commands.registerCommand(
     "multi-pilot.enhancePrompt",
-    async (...args: any[]) => {
-      
-      try {
-        let textToEnhance = '';
-        let editorContext: { text: string; language: string; fileName: string } | undefined;
-
-        // Collect editor context for better enhancement
-        const editor = vscode.window.activeTextEditor;
-        if (editor) {
-          const document = editor.document;
-          editorContext = {
-            text: document.getText(),
-            language: document.languageId,
-            fileName: document.fileName.split(/[\\\/]/).pop() || 'untitled'
-          };
-
-          // Check for selected text first
-          const selection = editor.selection;
-          if (!selection.isEmpty) {
-            const selectedText = document.getText(selection);
-            if (selectedText && selectedText.trim().length > 0) {
-              editorContext = {...editorContext, text: selectedText };
-              console.log("Using selected text from editor:", selectedText.substring(0, 200) + "...");
-            }
-          }
-        }
-
-        if (!textToEnhance || textToEnhance.trim().length === 0) {
-          try {
-            const clipboardText = await vscode.env.clipboard.readText();
-            if (clipboardText && clipboardText.trim().length > 0) {
-              textToEnhance = clipboardText;
-              console.log("Using text from clipboard:", clipboardText.substring(0, 500) + "...");
-            }
-          } catch (error) {
-            console.log("Could not read clipboard:", error);
-          }
-        }
-
-        // If no text found, show warning and exit
-        if (!textToEnhance || textToEnhance.trim().length === 0) {
-          vscode.window.showWarningMessage("No text found to enhance. Please select text or copy text to clipboard first.");
-          return;
-        }
-
-        console.log("Text to enhance:", textToEnhance);
-        if (editorContext) {
-          console.log("Editor context:", {
-            language: editorContext.language,
-            fileName: editorContext.fileName,
-            textLength: editorContext.text.length
-          });
-        }
-
-        // Show progress while enhancing
-        const enhancedPrompt = await vscode.window.withProgress({
-          location: vscode.ProgressLocation.Notification,
-          title: "Enhancing prompt...",
-          cancellable: false
-        }, async (progress) => {
-          // Use PromptService to improve the text with context
-          const promptService = PromptService.getInstance();
-          return await promptService.enhancePromptWithBothTemplates(textToEnhance, editorContext || { text: '', language: 'plaintext', fileName: 'untitled' });
-        });
-      
-
-         const doc = await vscode.workspace.openTextDocument({
-              content: enhancedPrompt,
-              language: 'markdown'
-            });
-            await vscode.window.showTextDocument(doc);
-
-      } catch (error) {
-        console.error("Error enhancing prompt:", error);
-        vscode.window.showErrorMessage(`Failed to enhance prompt: ${error}`);
-      }finally{
-        await vscode.env.clipboard.writeText('');
-      }
-      
-    }
+    (...args) => enhancePromptHandler.handle(...args)
   );
 
-  // Register parallel enhance prompt command
-  const disposableParallelEnhancePrompt = vscode.commands.registerCommand(
-    "multi-pilot.parallelEnhancePrompt",
-    async (...args: any[]) => {
-      
-      try {
-        let textToEnhance = '';
-        let editorContext: { text: string; language: string; fileName: string };
-
-        // Collect editor context for better enhancement
-        const editor = vscode.window.activeTextEditor;
-        if (editor) {
-          const document = editor.document;
-          editorContext = {
-            text: document.getText(),
-            language: document.languageId,
-            fileName: document.fileName.split(/[\\\/]/).pop() || 'untitled'
-          };
-        } else {
-          // Default context if no editor is available
-          editorContext = {
-            text: '',
-            language: 'text',
-            fileName: 'untitled'
-          };
-        }
-
-        if (!textToEnhance || textToEnhance.trim().length === 0) {
-          try {
-            const clipboardText = await vscode.env.clipboard.readText();
-            if (clipboardText && clipboardText.trim().length > 0) {
-              textToEnhance = clipboardText;
-              console.log("Using text from clipboard for parallel enhancement:", clipboardText.substring(0, 100) + "...");
-            }
-          } catch (error) {
-            console.log("Could not read clipboard:", error);
-          }
-        }
-
-        // If no text found, show warning and exit
-        if (!textToEnhance || textToEnhance.trim().length === 0) {
-          vscode.window.showWarningMessage("No text found to enhance. Please select text or copy text to clipboard first.");
-          return;
-        }
-
-        console.log("Text to enhance with both templates:", textToEnhance);
-        if (editorContext) {
-          console.log("Editor context for parallel processing:", {
-            language: editorContext.language,
-            fileName: editorContext.fileName,
-            textLength: editorContext.text.length
-          });
-        }
-
-        // Show progress while enhancing with both templates
-        const comparisonDocument = await vscode.window.withProgress({
-          location: vscode.ProgressLocation.Notification,
-          title: "Processing with both Lite and Full templates...",
-          cancellable: false
-        }, async (progress) => {
-          // Use PromptService to improve the text with both templates
-          const promptService = PromptService.getInstance();
-          return await promptService.enhancePromptWithBothTemplates(textToEnhance, editorContext!);
-        });
-      
-        const doc = await vscode.workspace.openTextDocument({
-          content: comparisonDocument,
-          language: 'markdown'
-        });
-        await vscode.window.showTextDocument(doc);
-
-        vscode.window.showInformationMessage("✅ Parallel enhancement comparison completed!");
-
-      } catch (error) {
-        console.error("Error enhancing prompt with both templates:", error);
-        vscode.window.showErrorMessage(`Failed to enhance prompt: ${error}`);
-      } finally {
-        await vscode.env.clipboard.writeText('');
-      }
-      
-    }
-  );
-
-  context.subscriptions.push(disposableSearch, disposableModelSelection, disposableEnhancePrompt, disposableParallelEnhancePrompt);
+  context.subscriptions.push(disposableSearch, disposableModelSelection, disposableEnhancePrompt);
 }
 
 export function deactivate() {

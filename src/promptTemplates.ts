@@ -5,7 +5,7 @@
 /**
  * Advanced enhancement prompt template with comprehensive prompt engineering guidelines
  */
-export const ADVANCED_ENHANCEMENT_PROMPT = (originalPrompt: string): string => `
+export const PRO_ENHANCEMENT_PROMPT = (originalPrompt: string): string => `
 ### System Role ###
 You are an expert prompt engineer specializing in optimizing prompts for AI models. Your goal is to transform user prompts into highly effective, clear, and actionable instructions.
 
@@ -81,9 +81,9 @@ Please provide an improved version of this prompt that will help get better resu
 Return ONLY the improved prompt, with no explanations or additional text.`;
 
 /**
- * Context-aware enhancement prompt template that uses editor context for better results
+ * Pro context-aware enhancement prompt template that uses editor context for better results
  */
-export const CONTEXT_AWARE_ENHANCEMENT_PROMPT = (
+export const PRO_CONTEXT_AWARE_ENHANCEMENT_PROMPT = (
     originalPrompt: string,
     editorContext: {
         text: string;
@@ -210,7 +210,7 @@ export const getPromptTemplate = (
 ): string => {
     switch (type) {
         case PromptTemplateType.ADVANCED_ENHANCEMENT:
-            return ADVANCED_ENHANCEMENT_PROMPT(originalPrompt);
+            return PRO_ENHANCEMENT_PROMPT(originalPrompt);
         
         case PromptTemplateType.BASIC_IMPROVEMENT:
             return BASIC_IMPROVEMENT_PROMPT(originalPrompt);

@@ -54,7 +54,7 @@ When you enhance a prompt, you can choose to:
 
 ### Parallel Prompt Enhancement & Context Awareness
 - Enhance selected text or clipboard content with full document context for smarter results
-- Compare prompt enhancements using both Lite and Full templates side by side
+- Compare prompt enhancements using both Lite and Pro templates side by side
 - Context menu integration for quick access to enhancement features
 
 ### Template & Performance Improvements

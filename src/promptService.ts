@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import { 
-    ADVANCED_ENHANCEMENT_PROMPT, 
+    PRO_ENHANCEMENT_PROMPT, 
     BASIC_IMPROVEMENT_PROMPT,
-    CONTEXT_AWARE_ENHANCEMENT_PROMPT,
+    PRO_CONTEXT_AWARE_ENHANCEMENT_PROMPT,
     LITE_CONTEXT_AWARE_ENHANCEMENT_PROMPT,
     LITE_ENHANCEMENT_PROMPT
 } from "./promptTemplates";
@@ -67,23 +67,23 @@ export class PromptService {
 
         try {
             // Create both enhancement prompts for parallel processing
-            let advancePrompt = '';
+            let proPrompt = '';
             let litePrompt = '';
             
             if (editorContext && editorContext.text.trim().length > 0) {
                 // Use context-aware enhancement when editor context is available
-                advancePrompt = CONTEXT_AWARE_ENHANCEMENT_PROMPT(originalPrompt, editorContext);
+                proPrompt = PRO_CONTEXT_AWARE_ENHANCEMENT_PROMPT(originalPrompt, editorContext);
                 litePrompt = LITE_CONTEXT_AWARE_ENHANCEMENT_PROMPT(originalPrompt, editorContext);
             } else {
-                // Fallback to standard enhancement without context
-                advancePrompt = ADVANCED_ENHANCEMENT_PROMPT(originalPrompt);
+                    // Fallback to standard enhancement without context
+                proPrompt = PRO_ENHANCEMENT_PROMPT(originalPrompt);
                 litePrompt = LITE_ENHANCEMENT_PROMPT(originalPrompt);
             }
 
             // Process both prompts in parallel using existing method
             const [liteResult, verboseResult] = await Promise.all([
                 this.processEnhancement(litePrompt, 'LITE'),
-                this.processEnhancement(advancePrompt, 'ADVANCE')
+                this.processEnhancement(proPrompt, 'ADVANCE')
             ]);
 
             // Create a default editorContext if none provided
@@ -141,7 +141,7 @@ export class PromptService {
     }
 
     /**
-     * Enhance prompts using both LITE and FULL context-aware templates in parallel
+     * Enhance prompts using both LITE and PRO context-aware templates in parallel
      * Returns a formatted document with separate results
      */
     public async enhancePromptWithBothTemplates(
@@ -162,17 +162,17 @@ export class PromptService {
 
         try {
             // Create both enhancement prompts
-            const litePrompt = LITE_CONTEXT_AWARE_ENHANCEMENT_PROMPT(originalPrompt, editorContext);
-            const fullPrompt = CONTEXT_AWARE_ENHANCEMENT_PROMPT(originalPrompt, editorContext);
+                const litePrompt = LITE_CONTEXT_AWARE_ENHANCEMENT_PROMPT(originalPrompt, editorContext);
+            const proPrompt = PRO_CONTEXT_AWARE_ENHANCEMENT_PROMPT(originalPrompt, editorContext);
 
             // Process both templates in parallel
-            const [liteResult, fullResult] = await Promise.all([
+            const [liteResult, proResult] = await Promise.all([
                 this.processEnhancement(litePrompt, 'LITE_CONTEXT_AWARE'),
-                this.processEnhancement(fullPrompt, 'CONTEXT_AWARE')
+                this.processEnhancement(proPrompt, 'CONTEXT_AWARE')
             ]);
 
             // Create formatted document with both results
-            return this.createComparisonDocument(originalPrompt, liteResult, fullResult, editorContext);
+            return this.createComparisonDocument(originalPrompt, liteResult, proResult, editorContext);
 
         } catch (error) {
             console.error('Error enhancing prompt with both templates:', error);
@@ -211,7 +211,7 @@ export class PromptService {
     private createComparisonDocument(
         originalPrompt: string,
         liteResult: string,
-        fullResult: string,
+        proResult: string,
         editorContext: {
             text: string;
             language: string;
@@ -220,7 +220,6 @@ export class PromptService {
     ): string {
         return `# 🚀 Multi-Pilot Prompt Enhancement Comparison
 
----
 
 ## 📝 Original Prompt
 
@@ -228,7 +227,6 @@ export class PromptService {
 ${originalPrompt}
 \`\`\`
 
----
 
 ## ⚡ Lite Enhancement Result
 
@@ -237,13 +235,11 @@ ${originalPrompt}
 ${liteResult}
 \`\`\`
 
----
 
-## 🔬 Full Enhancement Result
-
+## 🔬 Pro Enhancement Result
 
 \`\`\`
-${fullResult}
+${proResult}
 \`\`\`
 `;
     }

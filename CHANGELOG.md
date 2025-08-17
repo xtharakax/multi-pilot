@@ -6,10 +6,10 @@ All notable changes to the "Multi-Pilot" extension will be documented in this fi
 
 ### Added
 - Enhanced prompt engineering with context-aware improvements wil less steps
-- Parallel processing with both Lite and Full templates for efficiency comparison
+- Parallel processing with both Lite and Pro templates for efficiency comparison
 - Support for selected text enhancement while maintaining full document context
 - Parallel enhancement processing with comparison documents
-- Advanced template system with lite and full versions for token optimization
+- Advanced template system with lite and Pro versions for token optimization
 
 ### Changed
 - Optimized prompt templates for 50-70% token reduction with Lite versions
