@@ -1,6 +1,9 @@
 # 🚀 Multi-Pilot Extension v1.1.0
 
-Multi-Pilot is a Visual Studio Code extension that enables developers to interact with multiple AI language models simultaneously, allowing for direct comparison of responses from different AI models. Now with enhanced prompt engineering capabilities!
+Multi-Pilot brings two powerful capabilities to VS Code:
+
+1. Multi-model comparison to view and analyze responses from several AI models side by side.
+2. Advanced prompt engineering to intelligently enhance your prompts.
 
 ## 🚀 Getting Started
 
@@ -9,15 +12,12 @@ Multi-Pilot is a Visual Studio Code extension that enables developers to interac
 3. 💬 **Use** the chat participant `@multi-pilot` and ask your question
 4. ✅ **Select** the AI models you want to interact with using the "Select Models" command
 
+
 ### 🌟 Core Features
-- 🌐 **Multi-Model Support**: Interact with multiple AI models simultaneously (supports up to 6 models)
-- 🖥️ **Real-Time Response Comparison**: View responses from different AI models side by side in a split view
-- 🎛️ **Model Selection**: Choose which AI models to use through a simple selection interface
-- 💾 **Persistent Settings**: Your model preferences are saved between sessions
-- 🧠 **Enhanced Prompts**: Automatic prompt enhancement using available AI models to improve response quality
-- 🕒 **Conversation History**: Maintains context from previous interactions for more coherent responses
-- 🔄 **Dynamic Response Updates**: Real-time streaming of AI responses with typing indicators
-- 👁️ **Model Visibility Control**: Toggle visibility of individual model responses
+- Compare answers from multiple AI models side by side
+- Instantly enhance prompts for better AI results
+- Choose and save your favorite models
+- Streamlined, real-time response updates
 
 ## 🎯 Using the New Prompt Enhancement Features
 
@@ -49,10 +49,19 @@ When you enhance a prompt, you can choose to:
 | `Multi-Pilot: Enhance Prompt` | Enhance selected text or clipboard content |
 | `Multi-Pilot Search` | Open Multi-Pilot chat interface |
 
-## 🆕 What's New in v1.1.0
 
-### Enhanced Prompt Engineering
-The Enhanced Prompt Engineering feature helps you intelligently improve prompts using the AI models in your VS Code environment. It transforms simple prompts into optimized, detailed instructions, resulting in better AI responses. Importantly, you don’t need the @multi-pilot chat participant to use this feature you can access it directly from the command palette. Simply copy text from any source, then use the feature to enhance it.
+## 🆕 What's New in v1.2.0
+
+### Parallel Prompt Enhancement & Context Awareness
+- Enhance selected text or clipboard content with full document context for smarter results
+- Compare prompt enhancements using both Lite and Full templates side by side
+- Context menu integration for quick access to enhancement features
+
+### Template & Performance Improvements
+- Advanced template system with Lite versions for reduced token usage
+- Optimized prompt service architecture for faster processing
+- Improved text extraction logic and editor context detection
+
 #### 🚀 Quick Start
 1. **Command Palette**: Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS)
 2. **Select Command**: Choose `Multi-Pilot: Enhance Prompt`
