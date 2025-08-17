@@ -1,9 +1,18 @@
-# 🚀 Multi-Pilot Extension v1.1.0
+# 🚀 Multi-Pilot Extension v1.2.0
 
 Multi-Pilot brings two powerful capabilities to VS Code:
 
 1. Multi-model comparison to view and analyze responses from several AI models side by side.
 2. Advanced prompt engineering to intelligently enhance your prompts.
+
+## 🖼️ Multi-Model Comparison Demo
+
+![Multi-Model Comparison in Action](images/multi-model.gif)
+
+## ✨ Enhance Prompt Demo
+
+![Enhance Prompt Feature in Action](images/enhance-prompt.gif)
+
 
 ## 🚀 Getting Started
 
@@ -22,13 +31,9 @@ Multi-Pilot brings two powerful capabilities to VS Code:
 ## 🎯 Using the New Prompt Enhancement Features
 
 ### Command Palette
+- Copy the text you want to enhance, open the relevant file, or simply select the code/text directly in the currently open editor.
 - Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
 - Run `Multi-Pilot: Enhance Prompt`
-
-### Enhancement Options
-When you enhance a prompt, you can choose to:
-- **Copy to Clipboard**: Copy the enhanced prompt for use anywhere
-- **Open in New Document**: View the enhanced prompt in a new markdown document
 
 ## ⚙️ Configuration
 
@@ -62,15 +67,14 @@ When you enhance a prompt, you can choose to:
 - Optimized prompt service architecture for faster processing
 - Improved text extraction logic and editor context detection
 
+
 #### 🚀 Quick Start
-1. **Command Palette**: Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS)
-2. **Select Command**: Choose `Multi-Pilot: Enhance Prompt`
-3. **Choose Input**: The extension will intelligently detect text from:
-   - Clipboard content from your last copy
-   - Manual input via dialog box
+1. **Choose Input**: Copy the text you want to enhance, open the relevant file, or simply select the code/text directly in the currently open editor.
+2. **Command Palette**: Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS)
+3. **Select Command**: Choose `Multi-Pilot: Enhance Prompt`
+
 
 ### Improved Architecture
-
 - **Modular Design**: Refactored prompt templates into separate modules for better maintainability
 - **Template System**: Extensible prompt template system supporting basic, advanced, and custom enhancement strategies
 - **Error Handling**: Improved error handling and fallback mechanisms
