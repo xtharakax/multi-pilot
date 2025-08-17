@@ -2,7 +2,7 @@
   "name": "multi-pilot",
   "displayName": "Multi-Pilot",
   "publisher": "pubudutharaka",
-  "description": "Multi-Pilot is a Visual Studio Code extension that enables developers to interact with multiple AI language models simultaneously, allowing for direct comparison of responses from different AI models",
+  "description": "Multi-Pilot brings advanced prompt engineering and multi-model comparison to VS Code.",
   "icon": "images/icon.png",
   "version": "1.2.0",
   "engines": {
